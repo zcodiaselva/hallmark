@@ -1,0 +1,30 @@
+
+// Fonts
+@import url(http://fonts.googleapis.com/css?family=Montserrat+Alternates:400,700);
+
+@font-face {
+    font-family: 'FranklinGothicDemiRegular';
+    src: url('../fonts/fradm.eot');
+    src: url('../fonts/fradm.eot') format('embedded-opentype'),
+         url('../fonts/fradm.woff') format('woff'),
+         url('../fonts/fradm.ttf') format('truetype'),
+         url('../fonts/fradm.svg#FranklinGothicDemiRegular') format('svg');
+}
+
+@font-face {
+    font-family: 'FranklinGothicHeavyRegular';
+    src: url('../fonts/frahv.eot');
+    src: url('../fonts/frahv.eot') format('embedded-opentype'),
+         url('../fonts/frahv.woff') format('woff'),
+         url('../fonts/frahv.ttf') format('truetype'),
+         url('../fonts/frahv.svg#FranklinGothicHeavyRegular') format('svg');
+}
+
+@font-face {
+    font-family: 'FranklinGothicMediumRegular';
+    src: url('../fonts/framd.eot');
+    src: url('../fonts/framd.eot') format('embedded-opentype'),
+         url('../fonts/framd.woff') format('woff'),
+         url('../fonts/framd.ttf') format('truetype'),
+         url('../fonts/framd.svg#FranklinGothicMediumRegular') format('svg');
+}

@@ -1,0 +1,105 @@
+
+// Fonts
+$font-default: 'Montserrat+Alternates', sans-serif;
+$font-primary: 'FranklinGothicDemiRegular', serif;
+$font-secondary: 'FranklinGothicMediumRegular', serif;
+
+// Color
+$green: #24ad2f;
+$greenlight: #86bc25;
+$white: #fff;
+$grey: #565656 ;
+$greenbright: #2bc908;
+$greydark: #292929;
+$bluedark: #008cdd;
+$ash: #f4f4f4;
+$black: #000;
+
+$blue: rgb(0,85,129);
+$lightblue: #6CF;
+$lightgrey: rgb(164,166,168);
+$grey: rgb(51, 51, 51);
+$darkgrey: rgb(83,86,90);
+$lightgrey: #999;
+
+// Background
+$bg-success:      #89ce40;
+$bg-info:         #1784fb;
+$bg-warning:      #fed330;
+$bg-danger:       #fb4f59;
+
+
+// Mixin
+@mixin transition($property, $time, $style) {
+	-ms-border-radius: $property $time $style;
+	-moz-transition: $property $time $style;
+	-webkit-transition: $property $time $style;
+	-o-transition: $property $time $style;
+	transition: $property $time $style;
+}
+@mixin transition($transition, $ease: ease) {
+	-moz-transition:    all $transition $ease;
+	-o-transition:      all $transition $ease;
+	-webkit-transition: all $transition $ease;
+	-ms-transition: 		all $transition $ease;
+	transition:         all $transition $ease;
+}
+@mixin quote-translateX($translatex) {
+	-moz-transform: translateX($translatex);
+	-webkit-transform: translateX($translatex);
+	-ms-transform: translateX($translatex);
+	-o-transform: translateX($translatex);
+	transform: translateX($translatex);
+}
+@mixin inline-block() {
+	display:-moz-inline-stack;
+	display:inline-block;
+	zoom:1;
+	*display:inline;
+}
+@mixin border-radius($radius) {
+  -webkit-border-radius: $radius;
+     -moz-border-radius: $radius;
+      -ms-border-radius: $radius;
+          border-radius: $radius;
+}
+@mixin flex() {
+	display: -webkit-box;      
+  	display: -moz-box;         
+  	display: -ms-flexbox;      
+  	display: -webkit-flex;     
+  	display: flex;             
+}
+@mixin flexwrap() {
+	flex-wrap: wrap;
+	-webkit-flex-wrap: wrap; 
+	-moz-flex-wrap: wrap; 
+}
+@mixin box-shadow($top, $left, $blur, $color) {
+	-ms-box-shadow: $top $left $blur $color;
+	-webkit-box-shadow: $top $left $blur $color;
+	-moz-box-shadow: $top $left $blur $color;
+	box-shadow: $top $left $blur $color;
+}
+@mixin Opacity($value){
+  $IEValue: $value*100;
+  opacity: $value;
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity="+$IEValue+")";
+  filter: alpha(opacity=$IEValue);
+}
+@mixin linear-gradient($from-color, $to-color) {
+	background-color: mix($from-color, $to-color); /* Fallback */
+	background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from($from-color), to($to-color));
+	background-image: -webkit-linear-gradient(left top, $from-color, $to-color); 
+	background-image:    -moz-linear-gradient(left top, $from-color, $to-color);
+	background-image:     -ms-linear-gradient(left top, $from-color, $to-color);
+	background-image:      -o-linear-gradient(left top, $from-color, $to-color);
+	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorStr='#{$from-color}', EndColorStr='#{$to-color}')";
+}
+@mixin filter($filter-type,$filter-amount) { 
+  -webkit-filter: $filter-type+unquote('(#{$filter-amount})');
+  -moz-filter: $filter-type+unquote('(#{$filter-amount})');
+  -ms-filter: $filter-type+unquote('(#{$filter-amount})');
+  -o-filter: $filter-type+unquote('(#{$filter-amount})');
+  filter: $filter-type+unquote('(#{$filter-amount})');
+}
