@@ -55,8 +55,8 @@ return array(
 		'mysql' => array(
 			'driver'    => 'mysql',
 			'host'      => 'localhost',
-			'database'  => 'ikonix3_cis',
-			'username'  => 'ikonix3_cis',
+			'database'  => 'moneyqu4_ikonix3_cis',
+			'username'  => 'moneyqu4_ikonix3',
 			'password'  => '%wDbcQlWuvJE',
 			'charset'   => 'utf8',
 			'collation' => 'utf8_unicode_ci',
