@@ -21,5 +21,5 @@ class Menu extends Eloquent {
     {
     	return $this->belongsTo('App\Models\Page', 'page_id');
     }
-		
+			
 }

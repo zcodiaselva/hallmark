@@ -180,7 +180,7 @@ $(document).on('keypress', "#agency-name,#contat_ageny",function (event) {
     }
 });
 
-$(document).on('keypress', "#agency-address,#contact_name,#licensed,#business,#meg",function (event) {
+$(document).on('keypress', "#agency-address,#contact_name,#licensed,#business",function (event) {
     var theEvent = event || window.event;
     var key = theEvent.keyCode || theEvent.which;
 
