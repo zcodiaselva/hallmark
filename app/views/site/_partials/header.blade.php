@@ -9,5 +9,8 @@
 </div>
 {{ Request::is('/') ? '<section class="container">' : '<section class="container inner">' }}
 
-  <header id="header"> <a href="{{ URL::to('/') }}" class="navbar-brand"><img src="{{ URL::asset('assets/images/CIS-Logo.png') }}" alt="CIS" class="img-responsive"></a> <a href="#" class="pull-right"> <img src="{{ URL::asset('assets/images/am-best.png') }}" alt="AM Best" class="img-responsive"> </a> </header>
+  <header id="header"> 
+  <a href="{{ URL::to('/') }}" class="navbar-brand"><img src="{{ URL::asset('assets/images/CIS-Logo.png') }}" alt="CIS" class="img-responsive"></a> 
+  <a class="pull-right"> <img src="{{ URL::asset('assets/images/am-best.png') }}" alt="AM Best" class="img-responsive"> </a> 
+  </header>
       
