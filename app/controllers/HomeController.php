@@ -15,7 +15,7 @@ class HomeController extends BaseController {
 	{
            // $this->checkLanguage();
 
-		$this->menu = Menu::where('site','cis')->where('parent_id','0')->where('category_id','!=','12')->with('page')
+		$this->menu = Menu::where('site','cis')->where('parent_id','0')->where('category_id','!=','0')->with('page')
 										->orderBy('order', 'asc')->get();
              
 		foreach ($this->menu as $key => $menu_item) {
@@ -23,7 +23,9 @@ class HomeController extends BaseController {
 												->orderBy('order', 'asc')->get();
 		}
 
-		View::share('products', CisPage::where('category_id', 11)->get());
+		//View::share('products', CisPage::where('category_id', 11)->get());
+                View::share('menu', Menu::with('children')->where('parent_id','=',0)
+                        ->with('page')->orderBy('order', 'asc')->get());
 		
 	}
         
