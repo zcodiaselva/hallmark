@@ -1,0 +1,8 @@
+@font-face {
+    font-family: 'FranklinGothicHeavyRegular';
+    src: url('frahv.eot');
+    src: url('frahv.eot') format('embedded-opentype'),
+         url('frahv.woff') format('woff'),
+         url('frahv.ttf') format('truetype'),
+         url('frahv.svg#FranklinGothicHeavyRegular') format('svg');
+}
