@@ -1,450 +1,380 @@
-<?php namespace Illuminate\View\Compilers;
-
-use Closure;
-use Illuminate\Filesystem\Filesystem;
-
-class BladeCompiler extends Compiler implements CompilerInterface {
-
-	/**
-	 * All of the registered extensions.
-	 *
-	 * @var array
-	 */
-	protected $extensions = array();
-
-	/**
-	 * All of the available compiler functions.
-	 *
-	 * @var array
-	 */
-	protected $compilers = array(
-		'Extensions',
-		'Extends',
-		'Comments',
-		'Echos',
-		'Openings',
-		'Closings',
-		'Else',
-		'Unless',
-		'EndUnless',
-		'Includes',
-		'Each',
-		'Yields',
-		'Shows',
-		'Language',
-		'SectionStart',
-		'SectionStop',
-		'SectionOverwrite',
-	);
-
-	/**
-	 * Array of opening and closing tags for echos.
-	 *
-	 * @var array
-	 */
-	protected $contentTags = array('{{', '}}');
-
-	/**
-	 * Array of opening and closing tags for escaped echos.
-	 *
-	 * @var array
-	 */
-	protected $escapedTags = array('{{{', '}}}');
-
-	/**
-	 * Compile the view at the given path.
-	 *
-	 * @param  string  $path
-	 * @return void
-	 */
-	public function compile($path)
-	{
-		$contents = $this->compileString($this->files->get($path));
-
-		if ( ! is_null($this->cachePath))
-		{
-			$this->files->put($this->getCompiledPath($path), $contents);
-		}
-	}
-
-	/**
-	 * Compile the given Blade template contents.
-	 *
-	 * @param  string  $value
-	 * @return string
-	 */
-	public function compileString($value)
-	{
-		foreach ($this->compilers as $compiler)
-		{
-			$value = $this->{"compile{$compiler}"}($value);
-		}
-
-		return $value;
-	}
-
-	/**
-	 * Register a custom Blade compiler.
-	 *
-	 * @param  Closure  $compiler
-	 * @return void
-	 */
-	public function extend(Closure $compiler)
-	{
-		$this->extensions[] = $compiler;
-	}
-
-	/**
-	 * Execute the user defined extensions.
-	 *
-	 * @param  string  $value
-	 * @return string
-	 */
-	protected function compileExtensions($value)
-	{
-		foreach ($this->extensions as $compiler)
-		{
-			$value = call_user_func($compiler, $value, $this);
-		}
-
-		return $value;
-	}
-
-	/**
-	 * Compile Blade template extensions into valid PHP.
-	 *
-	 * @param  string  $value
-	 * @return string
-	 */
-	protected function compileExtends($value)
-	{
-		// By convention, Blade views using template inheritance must begin with the
-		// @extends expression, otherwise they will not be compiled with template
-		// inheritance. So, if they do not start with that we will just return.
-		if (strpos($value, '@extends') !== 0)
-		{
-			return $value;
-		}
-
-		$lines = preg_split("/(\r?\n)/", $value);
-
-		// Next, we just want to split the values by lines, and create an expression
-		// to include the parent layout at the end of the templates. Which allows
-		// the sections to get registered before the parent view gets rendered.
-		$lines = $this->compileLayoutExtends($lines);
-
-		return implode("\r\n", array_slice($lines, 1));
-	}
-
-	/**
-	 * Compile the proper template inheritance for the lines.
-	 *
-	 * @param  array  $lines
-	 * @return array
-	 */
-	protected function compileLayoutExtends($lines)
-	{
-		$pattern = $this->createMatcher('extends');
-
-		$lines[] = preg_replace($pattern, '$1@include$2', $lines[0]);
-
-		return $lines;
-	}
-
-	/**
-	 * Compile Blade comments into valid PHP.
-	 *
-	 * @param  string  $value
-	 * @return string
-	 */
-	protected function compileComments($value)
-	{
-		$pattern = sprintf('/%s--((.|\s)*?)--%s/', $this->contentTags[0], $this->contentTags[1]);
-
-		return preg_replace($pattern, '<?php /* $1 */ ?>', $value);
-	}
-
-	/**
-	 * Compile Blade echos into valid PHP.
-	 *
-	 * @param  string  $value
-	 * @return string
-	 */
-	protected function compileEchos($value)
-	{
-		$difference = strlen($this->contentTags[0]) - strlen($this->escapedTags[0]);
-		
-		if ($difference > 0)
-		{
-			return $this->compileEscapedEchos($this->compileRegularEchos($value));
-		}
-
-		return $this->compileRegularEchos($this->compileEscapedEchos($value));
-	}
-
-	/**
-	 * Compile the "regular" echo statements.
-	 *
-	 * @param  string  $value
-	 * @return string
-	 */
-	protected function compileRegularEchos($value)
-	{
-		$pattern = sprintf('/%s\s*(.+?)\s*%s/s', $this->contentTags[0], $this->contentTags[1]);
-
-		return preg_replace($pattern, '<?php echo $1; ?>', $value);
-	}
-
-	/**
-	 * Compile the escaped echo statements.
-	 *
-	 * @param  string  $value
-	 * @return string
-	 */
-	protected function compileEscapedEchos($value)
-	{
-		$pattern = sprintf('/%s\s*(.+?)\s*%s/s', $this->escapedTags[0], $this->escapedTags[1]);
-
-		return preg_replace($pattern, '<?php echo e($1); ?>', $value);
-	}
-
-	/**
-	 * Compile Blade structure openings into valid PHP.
-	 *
-	 * @param  string  $value
-	 * @return string
-	 */
-	protected function compileOpenings($value)
-	{
-		$pattern = '/(?(R)\((?:[^\(\)]|(?R))*\)|(?<!\w)(\s*)@(if|elseif|foreach|for|while)(\s*(?R)+))/';
-
-		return preg_replace($pattern, '$1<?php $2$3: ?>', $value);
-	}
-
-	/**
-	 * Compile Blade structure closings into valid PHP.
-	 *
-	 * @param  string  $value
-	 * @return string
-	 */
-	protected function compileClosings($value)
-	{
-		$pattern = '/(\s*)@(endif|endforeach|endfor|endwhile)(\s*)/';
-
-		return preg_replace($pattern, '$1<?php $2; ?>$3', $value);
-	}
-
-	/**
-	 * Compile Blade else statements into valid PHP.
-	 *
-	 * @param  string  $value
-	 * @return string
-	 */
-	protected function compileElse($value)
-	{
-		$pattern = $this->createPlainMatcher('else');
-
-		return preg_replace($pattern, '$1<?php else: ?>$2', $value);
-	}
-
-	/**
-	 * Compile Blade unless statements into valid PHP.
-	 *
-	 * @param  string  $value
-	 * @return string
-	 */
-	protected function compileUnless($value)
-	{
-		$pattern = $this->createMatcher('unless');
-
-		return preg_replace($pattern, '$1<?php if ( !$2): ?>', $value);
-	}
-
-	/**
-	 * Compile Blade end unless statements into valid PHP.
-	 *
-	 * @param  string  $value
-	 * @return string
-	 */
-	protected function compileEndUnless($value)
-	{
-		$pattern = $this->createPlainMatcher('endunless');
-
-		return preg_replace($pattern, '$1<?php endif; ?>$2', $value);
-	}
-
-	/**
-	 * Compile Blade include statements into valid PHP.
-	 *
-	 * @param  string  $value
-	 * @return string
-	 */
-	protected function compileIncludes($value)
-	{
-		$pattern = $this->createOpenMatcher('include');
-
-		$replace = '$1<?php echo $__env->make$2, array_except(get_defined_vars(), array(\'__data\', \'__path\')))->render(); ?>';
-
-		return preg_replace($pattern, $replace, $value);
-	}
-
-	/**
-	 * Compile Blade each statements into valid PHP.
-	 *
-	 * @param  string  $value
-	 * @return string
-	 */
-	protected function compileEach($value)
-	{
-		$pattern = $this->createMatcher('each');
-
-		return preg_replace($pattern, '$1<?php echo $__env->renderEach$2; ?>', $value);
-	}
-
-	/**
-	 * Compile Blade yield statements into valid PHP.
-	 *
-	 * @param  string  $value
-	 * @return string
-	 */
-	protected function compileYields($value)
-	{
-		$pattern = $this->createMatcher('yield');
-
-		return preg_replace($pattern, '$1<?php echo $__env->yieldContent$2; ?>', $value);
-	}
-
-	/**
-	 * Compile Blade show statements into valid PHP.
-	 *
-	 * @param  string  $value
-	 * @return string
-	 */
-	protected function compileShows($value)
-	{
-		$pattern = $this->createPlainMatcher('show');
-
-		return preg_replace($pattern, '$1<?php echo $__env->yieldSection(); ?>$2', $value);
-	}
-
-	/**
-	 * Compile Blade language and language choice statements into valid PHP.
-	 *
-	 * @param  string  $value
-	 * @return string
-	 */
-	protected function compileLanguage($value)
-	{
-		$pattern = $this->createMatcher('lang');
-
-		$value = preg_replace($pattern, '$1<?php echo \Illuminate\Support\Facades\Lang::get$2; ?>', $value);
-
-		$pattern = $this->createMatcher('choice');
-
-		return preg_replace($pattern, '$1<?php echo \Illuminate\Support\Facades\Lang::choice$2; ?>', $value);
-	}
-
-	/**
-	 * Compile Blade section start statements into valid PHP.
-	 *
-	 * @param  string  $value
-	 * @return string
-	 */
-	protected function compileSectionStart($value)
-	{
-		$pattern = $this->createMatcher('section');
-
-		return preg_replace($pattern, '$1<?php $__env->startSection$2; ?>', $value);
-	}
-
-	/**
-	 * Compile Blade section stop statements into valid PHP.
-	 *
-	 * @param  string  $value
-	 * @return string
-	 */
-	protected function compileSectionStop($value)
-	{
-		$pattern = $this->createPlainMatcher('stop');
-
-		$value = preg_replace($pattern, '$1<?php $__env->stopSection(); ?>$2', $value);
-
-		$pattern = $this->createPlainMatcher('endsection');
-
-		return preg_replace($pattern, '$1<?php $__env->stopSection(); ?>$2', $value);
-	}
-
-	/**
-	 * Compile Blade section stop statements into valid PHP.
-	 *
-	 * @param  string  $value
-	 * @return string
-	 */
-	protected function compileSectionOverwrite($value)
-	{
-		$pattern = $this->createPlainMatcher('overwrite');
-
-		return preg_replace($pattern, '$1<?php $__env->stopSection(true); ?>$2', $value);
-	}
-
-	/**
-	 * Get the regular expression for a generic Blade function.
-	 *
-	 * @param  string  $function
-	 * @return string
-	 */
-	public function createMatcher($function)
-	{
-		return '/(?<!\w)(\s*)@'.$function.'(\s*\(.*\))/';
-	}
-
-	/**
-	 * Get the regular expression for a generic Blade function.
-	 *
-	 * @param  string  $function
-	 * @return string
-	 */
-	public function createOpenMatcher($function)
-	{
-		return '/(?<!\w)(\s*)@'.$function.'(\s*\(.*)\)/';
-	}
-
-	/**
-	 * Create a plain Blade matcher.
-	 *
-	 * @param  string  $function
-	 * @return string
-	 */
-	public function createPlainMatcher($function)
-	{
-		return '/(?<!\w)(\s*)@'.$function.'(\s*)/';
-	}
-
-	/**
-	 * Sets the content tags used for the compiler.
-	 *
-	 * @param  string  $openTag
-	 * @param  string  $closeTag
-	 * @param  bool    $escaped
-	 * @return void
-	 */
-	public function setContentTags($openTag, $closeTag, $escaped = false)
-	{
-		$property = ($escaped === true) ? 'escapedTags' : 'contentTags';
-
-		$this->{$property} = array(preg_quote($openTag), preg_quote($closeTag));
-	}
-
-	/**
-	 * Sets the escaped content tags used for the compiler.
-	 *
-	 * @param  string  $openTag
-	 * @param  string  $closeTag
-	 * @return void
-	 */
-	public function setEscapedContentTags($openTag, $closeTag)
-	{
-		$this->setContentTags($openTag, $closeTag, true);
-	}
-
+<?php
+
+namespace Illuminate\View\Compilers;
+
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+
+class BladeCompiler extends Compiler implements CompilerInterface
+{
+    use Concerns\CompilesAuthorizations,
+        Concerns\CompilesComments,
+        Concerns\CompilesComponents,
+        Concerns\CompilesConditionals,
+        Concerns\CompilesEchos,
+        Concerns\CompilesIncludes,
+        Concerns\CompilesInjections,
+        Concerns\CompilesLayouts,
+        Concerns\CompilesLoops,
+        Concerns\CompilesRawPhp,
+        Concerns\CompilesStacks,
+        Concerns\CompilesTranslations;
+
+    /**
+     * All of the registered extensions.
+     *
+     * @var array
+     */
+    protected $extensions = [];
+
+    /**
+     * All custom "directive" handlers.
+     *
+     * This was implemented as a more usable "extend" in 5.1.
+     *
+     * @var array
+     */
+    protected $customDirectives = [];
+
+    /**
+     * The file currently being compiled.
+     *
+     * @var string
+     */
+    protected $path;
+
+    /**
+     * All of the available compiler functions.
+     *
+     * @var array
+     */
+    protected $compilers = [
+        'Comments',
+        'Extensions',
+        'Statements',
+        'Echos',
+    ];
+
+    /**
+     * Array of opening and closing tags for raw echos.
+     *
+     * @var array
+     */
+    protected $rawTags = ['{!!', '!!}'];
+
+    /**
+     * Array of opening and closing tags for regular echos.
+     *
+     * @var array
+     */
+    protected $contentTags = ['{{', '}}'];
+
+    /**
+     * Array of opening and closing tags for escaped echos.
+     *
+     * @var array
+     */
+    protected $escapedTags = ['{{{', '}}}'];
+
+    /**
+     * The "regular" / legacy echo string format.
+     *
+     * @var string
+     */
+    protected $echoFormat = 'e(%s)';
+
+    /**
+     * Array of footer lines to be added to template.
+     *
+     * @var array
+     */
+    protected $footer = [];
+
+    /**
+     * Placeholder to temporary mark the position of verbatim blocks.
+     *
+     * @var string
+     */
+    protected $verbatimPlaceholder = '@__verbatim__@';
+
+    /**
+     * Array to temporary store the verbatim blocks found in the template.
+     *
+     * @var array
+     */
+    protected $verbatimBlocks = [];
+
+    /**
+     * Compile the view at the given path.
+     *
+     * @param  string  $path
+     * @return void
+     */
+    public function compile($path = null)
+    {
+        if ($path) {
+            $this->setPath($path);
+        }
+
+        if (! is_null($this->cachePath)) {
+            $contents = $this->compileString($this->files->get($this->getPath()));
+
+            $this->files->put($this->getCompiledPath($this->getPath()), $contents);
+        }
+    }
+
+    /**
+     * Get the path currently being compiled.
+     *
+     * @return string
+     */
+    public function getPath()
+    {
+        return $this->path;
+    }
+
+    /**
+     * Set the path currently being compiled.
+     *
+     * @param  string  $path
+     * @return void
+     */
+    public function setPath($path)
+    {
+        $this->path = $path;
+    }
+
+    /**
+     * Compile the given Blade template contents.
+     *
+     * @param  string  $value
+     * @return string
+     */
+    public function compileString($value)
+    {
+        $result = '';
+
+        if (strpos($value, '@verbatim') !== false) {
+            $value = $this->storeVerbatimBlocks($value);
+        }
+
+        $this->footer = [];
+
+        // Here we will loop through all of the tokens returned by the Zend lexer and
+        // parse each one into the corresponding valid PHP. We will then have this
+        // template as the correctly rendered PHP that can be rendered natively.
+        foreach (token_get_all($value) as $token) {
+            $result .= is_array($token) ? $this->parseToken($token) : $token;
+        }
+
+        if (! empty($this->verbatimBlocks)) {
+            $result = $this->restoreVerbatimBlocks($result);
+        }
+
+        // If there are any footer lines that need to get added to a template we will
+        // add them here at the end of the template. This gets used mainly for the
+        // template inheritance via the extends keyword that should be appended.
+        if (count($this->footer) > 0) {
+            $result = $this->addFooters($result);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Store the verbatim blocks and replace them with a temporary placeholder.
+     *
+     * @param  string  $value
+     * @return string
+     */
+    protected function storeVerbatimBlocks($value)
+    {
+        return preg_replace_callback('/(?<!@)@verbatim(.*?)@endverbatim/s', function ($matches) {
+            $this->verbatimBlocks[] = $matches[1];
+
+            return $this->verbatimPlaceholder;
+        }, $value);
+    }
+
+    /**
+     * Replace the raw placeholders with the original code stored in the raw blocks.
+     *
+     * @param  string  $result
+     * @return string
+     */
+    protected function restoreVerbatimBlocks($result)
+    {
+        $result = preg_replace_callback('/'.preg_quote($this->verbatimPlaceholder).'/', function () {
+            return array_shift($this->verbatimBlocks);
+        }, $result);
+
+        $this->verbatimBlocks = [];
+
+        return $result;
+    }
+
+    /**
+     * Add the stored footers onto the given content.
+     *
+     * @param  string  $result
+     * @return string
+     */
+    protected function addFooters($result)
+    {
+        return ltrim($result, PHP_EOL)
+                .PHP_EOL.implode(PHP_EOL, array_reverse($this->footer));
+    }
+
+    /**
+     * Parse the tokens from the template.
+     *
+     * @param  array  $token
+     * @return string
+     */
+    protected function parseToken($token)
+    {
+        list($id, $content) = $token;
+
+        if ($id == T_INLINE_HTML) {
+            foreach ($this->compilers as $type) {
+                $content = $this->{"compile{$type}"}($content);
+            }
+        }
+
+        return $content;
+    }
+
+    /**
+     * Execute the user defined extensions.
+     *
+     * @param  string  $value
+     * @return string
+     */
+    protected function compileExtensions($value)
+    {
+        foreach ($this->extensions as $compiler) {
+            $value = call_user_func($compiler, $value, $this);
+        }
+
+        return $value;
+    }
+
+    /**
+     * Compile Blade statements that start with "@".
+     *
+     * @param  string  $value
+     * @return string
+     */
+    protected function compileStatements($value)
+    {
+        return preg_replace_callback(
+            '/\B@(@?\w+(?:::\w+)?)([ \t]*)(\( ( (?>[^()]+) | (?3) )* \))?/x', function ($match) {
+                return $this->compileStatement($match);
+            }, $value
+        );
+    }
+
+    /**
+     * Compile a single Blade @ statement.
+     *
+     * @param  array  $match
+     * @return string
+     */
+    protected function compileStatement($match)
+    {
+        if (Str::contains($match[1], '@')) {
+            $match[0] = isset($match[3]) ? $match[1].$match[3] : $match[1];
+        } elseif (isset($this->customDirectives[$match[1]])) {
+            $match[0] = $this->callCustomDirective($match[1], Arr::get($match, 3));
+        } elseif (method_exists($this, $method = 'compile'.ucfirst($match[1]))) {
+            $match[0] = $this->$method(Arr::get($match, 3));
+        }
+
+        return isset($match[3]) ? $match[0] : $match[0].$match[2];
+    }
+
+    /**
+     * Call the given directive with the given value.
+     *
+     * @param  string  $name
+     * @param  string|null  $value
+     * @return string
+     */
+    protected function callCustomDirective($name, $value)
+    {
+        if (Str::startsWith($value, '(') && Str::endsWith($value, ')')) {
+            $value = Str::substr($value, 1, -1);
+        }
+
+        return call_user_func($this->customDirectives[$name], trim($value));
+    }
+
+    /**
+     * Strip the parentheses from the given expression.
+     *
+     * @param  string  $expression
+     * @return string
+     */
+    public function stripParentheses($expression)
+    {
+        if (Str::startsWith($expression, '(')) {
+            $expression = substr($expression, 1, -1);
+        }
+
+        return $expression;
+    }
+
+    /**
+     * Register a custom Blade compiler.
+     *
+     * @param  callable  $compiler
+     * @return void
+     */
+    public function extend(callable $compiler)
+    {
+        $this->extensions[] = $compiler;
+    }
+
+    /**
+     * Get the extensions used by the compiler.
+     *
+     * @return array
+     */
+    public function getExtensions()
+    {
+        return $this->extensions;
+    }
+
+    /**
+     * Register a handler for custom directives.
+     *
+     * @param  string  $name
+     * @param  callable  $handler
+     * @return void
+     */
+    public function directive($name, callable $handler)
+    {
+        $this->customDirectives[$name] = $handler;
+    }
+
+    /**
+     * Get the list of custom directives.
+     *
+     * @return array
+     */
+    public function getCustomDirectives()
+    {
+        return $this->customDirectives;
+    }
+
+    /**
+     * Set the echo format to be used by the compiler.
+     *
+     * @param  string  $format
+     * @return void
+     */
+    public function setEchoFormat($format)
+    {
+        $this->echoFormat = $format;
+    }
 }

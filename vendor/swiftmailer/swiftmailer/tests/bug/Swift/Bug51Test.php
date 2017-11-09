@@ -1,31 +1,20 @@
 <?php
 
-require_once 'Swift/Tests/SwiftUnitTestCase.php';
-
-class Swift_Bug51Test extends Swift_Tests_SwiftUnitTestCase
+class Swift_Bug51Test extends \SwiftMailerTestCase
 {
     private $_attachmentFile;
     private $_outputFile;
 
-    public function skip()
+    protected function setUp()
     {
-        $this->skipUnless(
-            is_writable(SWIFT_TMP_DIR),
-            '%s: This test requires tests/acceptance.conf.php to specify a ' .
-            'writable SWIFT_TMP_DIR'
-        );
-    }
-
-    public function setUp()
-    {
-        $this->_attachmentFile = SWIFT_TMP_DIR . '/attach.rand.bin';
+        $this->_attachmentFile = sys_get_temp_dir().'/attach.rand.bin';
         file_put_contents($this->_attachmentFile, '');
 
-        $this->_outputFile = SWIFT_TMP_DIR . '/attach.out.bin';
+        $this->_outputFile = sys_get_temp_dir().'/attach.out.bin';
         file_put_contents($this->_outputFile, '');
     }
 
-    public function tearDown()
+    protected function tearDown()
     {
         unlink($this->_attachmentFile);
         unlink($this->_outputFile);
@@ -70,8 +59,6 @@ class Swift_Bug51Test extends Swift_Tests_SwiftUnitTestCase
         }
     }
 
-    // -- Custom Assertions
-
     public function assertAttachmentFromSourceMatches($attachmentData, $source)
     {
         $encHeader = 'Content-Transfer-Encoding: base64';
@@ -91,8 +78,6 @@ class Swift_Bug51Test extends Swift_Tests_SwiftUnitTestCase
 
         $this->assertIdenticalBinary($attachmentData, base64_decode($attachmentBase64));
     }
-
-    // -- Creation Methods
 
     private function _fillFileWithRandomBytes($byteCount, $file)
     {

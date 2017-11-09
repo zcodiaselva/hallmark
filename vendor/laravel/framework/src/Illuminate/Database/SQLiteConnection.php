@@ -1,35 +1,51 @@
-<?php namespace Illuminate\Database;
+<?php
 
-class SQLiteConnection extends Connection {
+namespace Illuminate\Database;
 
-	/**
-	 * Get the default query grammar instance.
-	 *
-	 * @return \Illuminate\Database\Query\Grammars\Grammars\Grammar
-	 */
-	protected function getDefaultQueryGrammar()
-	{
-		return $this->withTablePrefix(new Query\Grammars\SQLiteGrammar);
-	}
+use Illuminate\Database\Query\Processors\SQLiteProcessor;
+use Doctrine\DBAL\Driver\PDOSqlite\Driver as DoctrineDriver;
+use Illuminate\Database\Query\Grammars\SQLiteGrammar as QueryGrammar;
+use Illuminate\Database\Schema\Grammars\SQLiteGrammar as SchemaGrammar;
 
-	/**
-	 * Get the default schema grammar instance.
-	 *
-	 * @return \Illuminate\Database\Schema\Grammars\Grammar
-	 */
-	protected function getDefaultSchemaGrammar()
-	{
-		return $this->withTablePrefix(new Schema\Grammars\SQLiteGrammar);
-	}
+class SQLiteConnection extends Connection
+{
+    /**
+     * Get the default query grammar instance.
+     *
+     * @return \Illuminate\Database\Query\Grammars\SQLiteGrammar
+     */
+    protected function getDefaultQueryGrammar()
+    {
+        return $this->withTablePrefix(new QueryGrammar);
+    }
 
-	/**
-	 * Get the Doctrine DBAL Driver.
-	 *
-	 * @return \Doctrine\DBAL\Driver
-	 */
-	protected function getDoctrineDriver()
-	{
-		return new \Doctrine\DBAL\Driver\PDOSqlite\Driver;
-	}
+    /**
+     * Get the default schema grammar instance.
+     *
+     * @return \Illuminate\Database\Schema\Grammars\SQLiteGrammar
+     */
+    protected function getDefaultSchemaGrammar()
+    {
+        return $this->withTablePrefix(new SchemaGrammar);
+    }
 
+    /**
+     * Get the default post processor instance.
+     *
+     * @return \Illuminate\Database\Query\Processors\SQLiteProcessor
+     */
+    protected function getDefaultPostProcessor()
+    {
+        return new SQLiteProcessor;
+    }
+
+    /**
+     * Get the Doctrine DBAL driver.
+     *
+     * @return \Doctrine\DBAL\Driver\PDOSqlite\Driver
+     */
+    protected function getDoctrineDriver()
+    {
+        return new DoctrineDriver;
+    }
 }

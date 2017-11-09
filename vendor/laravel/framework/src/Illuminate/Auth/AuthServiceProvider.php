@@ -1,79 +1,90 @@
-<?php namespace Illuminate\Auth;
+<?php
 
+namespace Illuminate\Auth;
+
+use Illuminate\Auth\Access\Gate;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Contracts\Auth\Access\Gate as GateContract;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 
-class AuthServiceProvider extends ServiceProvider {
+class AuthServiceProvider extends ServiceProvider
+{
+    /**
+     * Register the service provider.
+     *
+     * @return void
+     */
+    public function register()
+    {
+        $this->registerAuthenticator();
 
-	/**
-	 * Indicates if loading of the provider is deferred.
-	 *
-	 * @var bool
-	 */
-	protected $defer = true;
+        $this->registerUserResolver();
 
-	/**
-	 * Bootstrap the application events.
-	 *
-	 * @return void
-	 */
-	public function boot()
-	{
-		$this->registerAuthEvents();
-	}
+        $this->registerAccessGate();
 
-	/**
-	 * Register the service provider.
-	 *
-	 * @return void
-	 */
-	public function register()
-	{
-		$this->app['auth'] = $this->app->share(function($app)
-		{
-			// Once the authentication service has actually been requested by the developer
-			// we will set a variable in the application indicating such. This helps us
-			// know that we need to set any queued cookies in the after event later.
-			$app['auth.loaded'] = true;
+        $this->registerRequestRebindHandler();
+    }
 
-			return new AuthManager($app);
-		});
-	}
+    /**
+     * Register the authenticator services.
+     *
+     * @return void
+     */
+    protected function registerAuthenticator()
+    {
+        $this->app->singleton('auth', function ($app) {
+            // Once the authentication service has actually been requested by the developer
+            // we will set a variable in the application indicating such. This helps us
+            // know that we need to set any queued cookies in the after event later.
+            $app['auth.loaded'] = true;
 
-	/**
-	 * Register the events needed for authentication.
-	 *
-	 * @return void
-	 */
-	protected function registerAuthEvents()
-	{
-		$app = $this->app;
+            return new AuthManager($app);
+        });
 
-		$app->after(function($request, $response) use ($app)
-		{
-			// If the authentication service has been used, we'll check for any cookies
-			// that may be queued by the service. These cookies are all queued until
-			// they are attached onto Response objects at the end of the requests.
-			if (isset($app['auth.loaded']))
-			{
-				foreach ($app['auth']->getDrivers() as $driver)
-				{
-					foreach ($driver->getQueuedCookies() as $cookie)
-					{
-						$response->headers->setCookie($cookie);
-					}
-				}
-			}
-		});
-	}
+        $this->app->singleton('auth.driver', function ($app) {
+            return $app['auth']->guard();
+        });
+    }
 
-	/**
-	 * Get the services provided by the provider.
-	 *
-	 * @return array
-	 */
-	public function provides()
-	{
-		return array('auth');
-	}
+    /**
+     * Register a resolver for the authenticated user.
+     *
+     * @return void
+     */
+    protected function registerUserResolver()
+    {
+        $this->app->bind(
+            AuthenticatableContract::class, function ($app) {
+                return call_user_func($app['auth']->userResolver());
+            }
+        );
+    }
 
+    /**
+     * Register the access gate service.
+     *
+     * @return void
+     */
+    protected function registerAccessGate()
+    {
+        $this->app->singleton(GateContract::class, function ($app) {
+            return new Gate($app, function () use ($app) {
+                return call_user_func($app['auth']->userResolver());
+            });
+        });
+    }
+
+    /**
+     * Register a resolver for the authenticated user.
+     *
+     * @return void
+     */
+    protected function registerRequestRebindHandler()
+    {
+        $this->app->rebinding('request', function ($app, $request) {
+            $request->setUserResolver(function ($guard = null) use ($app) {
+                return call_user_func($app['auth']->userResolver(), $guard);
+            });
+        });
+    }
 }

@@ -1,34 +1,23 @@
 <?php
 
-require_once 'Swift/Tests/SwiftUnitTestCase.php';
-
-class Swift_Bug76Test extends Swift_Tests_SwiftUnitTestCase
+class Swift_Bug76Test extends \PHPUnit_Framework_TestCase
 {
     private $_inputFile;
     private $_outputFile;
     private $_encoder;
 
-    public function skip()
+    protected function setUp()
     {
-        $this->skipUnless(
-            is_writable(SWIFT_TMP_DIR),
-            '%s: This test requires tests/acceptance.conf.php to specify a ' .
-            'writable SWIFT_TMP_DIR'
-        );
-    }
-
-    public function setUp()
-    {
-        $this->_inputFile = SWIFT_TMP_DIR . '/in.bin';
+        $this->_inputFile = sys_get_temp_dir().'/in.bin';
         file_put_contents($this->_inputFile, '');
 
-        $this->_outputFile = SWIFT_TMP_DIR . '/out.bin';
+        $this->_outputFile = sys_get_temp_dir().'/out.bin';
         file_put_contents($this->_outputFile, '');
 
         $this->_encoder = $this->_createEncoder();
     }
 
-    public function tearDown()
+    protected function tearDown()
     {
         unlink($this->_inputFile);
         unlink($this->_outputFile);
@@ -48,8 +37,6 @@ class Swift_Bug76Test extends Swift_Tests_SwiftUnitTestCase
         );
     }
 
-    // -- Custom Assertions
-
     public function assertMaxLineLength($length, $filePath, $message = '%s')
     {
         $lines = file($filePath);
@@ -57,8 +44,6 @@ class Swift_Bug76Test extends Swift_Tests_SwiftUnitTestCase
             $this->assertTrue((strlen(trim($line)) <= 76), $message);
         }
     }
-
-    // -- Creation Methods
 
     private function _fillFileWithRandomBytes($byteCount, $file)
     {

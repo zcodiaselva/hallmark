@@ -1,80 +1,98 @@
-<?php namespace Illuminate\Database;
+<?php
+
+namespace Illuminate\Database;
 
 use Closure;
+use Exception;
+use Throwable;
+use Doctrine\DBAL\Driver\PDOSqlsrv\Driver as DoctrineDriver;
+use Illuminate\Database\Query\Processors\SqlServerProcessor;
+use Illuminate\Database\Query\Grammars\SqlServerGrammar as QueryGrammar;
+use Illuminate\Database\Schema\Grammars\SqlServerGrammar as SchemaGrammar;
 
-class SqlServerConnection extends Connection {
+class SqlServerConnection extends Connection
+{
+    /**
+     * Execute a Closure within a transaction.
+     *
+     * @param  \Closure  $callback
+     * @param  int  $attempts
+     * @return mixed
+     *
+     * @throws \Exception|\Throwable
+     */
+    public function transaction(Closure $callback, $attempts = 1)
+    {
+        for ($a = 1; $a <= $attempts; $a++) {
+            if ($this->getDriverName() == 'sqlsrv') {
+                return parent::transaction($callback);
+            }
 
-	/**
-	 * Execute a Closure within a transaction.
-	 *
-	 * @param  Closure  $callback
-	 * @return mixed
-	 */
-	public function transaction(Closure $callback)
-	{
-		$this->pdo->exec('BEGIN TRAN');
+            $this->getPdo()->exec('BEGIN TRAN');
 
-		// We'll simply execute the given callback within a try / catch block
-		// and if we catch any exception we can rollback the transaction
-		// so that none of the changes are persisted to the database.
-		try
-		{
-			$result = $callback($this);
+            // We'll simply execute the given callback within a try / catch block
+            // and if we catch any exception we can rollback the transaction
+            // so that none of the changes are persisted to the database.
+            try {
+                $result = $callback($this);
 
-			$this->pdo->exec('COMMIT TRAN');
-		}
+                $this->getPdo()->exec('COMMIT TRAN');
+            }
 
-		// If we catch an exception, we will roll back so nothing gets messed
-		// up in the database. Then we'll re-throw the exception so it can
-		// be handled how the developer sees fit for their applications.
-		catch (\Exception $e)
-		{
-			$this->pdo->exec('ROLLBACK TRAN');
+            // If we catch an exception, we will roll back so nothing gets messed
+            // up in the database. Then we'll re-throw the exception so it can
+            // be handled how the developer sees fit for their applications.
+            catch (Exception $e) {
+                $this->getPdo()->exec('ROLLBACK TRAN');
 
-			throw $e;
-		}
+                throw $e;
+            } catch (Throwable $e) {
+                $this->getPdo()->exec('ROLLBACK TRAN');
 
-		return $result;
-	}
+                throw $e;
+            }
 
-	/**
-	 * Get the default query grammar instance.
-	 *
-	 * @return \Illuminate\Database\Query\Grammars\Grammars\Grammar
-	 */
-	protected function getDefaultQueryGrammar()
-	{
-		return $this->withTablePrefix(new Query\Grammars\SqlServerGrammar);
-	}
+            return $result;
+        }
+    }
 
-	/**
-	 * Get the default schema grammar instance.
-	 *
-	 * @return \Illuminate\Database\Schema\Grammars\Grammar
-	 */
-	protected function getDefaultSchemaGrammar()
-	{
-		return $this->withTablePrefix(new Schema\Grammars\SqlServerGrammar);
-	}
+    /**
+     * Get the default query grammar instance.
+     *
+     * @return \Illuminate\Database\Query\Grammars\SqlServerGrammar
+     */
+    protected function getDefaultQueryGrammar()
+    {
+        return $this->withTablePrefix(new QueryGrammar);
+    }
 
-	/**
-	 * Get the Doctrine DBAL Driver.
-	 *
-	 * @return \Doctrine\DBAL\Driver
-	 */
-	protected function getDoctrineDriver()
-	{
-		return new \Doctrine\DBAL\Driver\PDOSqlsrv\Driver;
-	}
+    /**
+     * Get the default schema grammar instance.
+     *
+     * @return \Illuminate\Database\Schema\Grammars\SqlServerGrammar
+     */
+    protected function getDefaultSchemaGrammar()
+    {
+        return $this->withTablePrefix(new SchemaGrammar);
+    }
 
-	/**
-	 * Get the default post processor instance.
-	 *
-	 * @return \Illuminate\Database\Query\Processors\Processor
-	 */
-	protected function getDefaultPostProcessor()
-	{
-		return new Query\Processors\SqlServerProcessor;
-	}
+    /**
+     * Get the default post processor instance.
+     *
+     * @return \Illuminate\Database\Query\Processors\SqlServerProcessor
+     */
+    protected function getDefaultPostProcessor()
+    {
+        return new SqlServerProcessor;
+    }
 
+    /**
+     * Get the Doctrine DBAL driver.
+     *
+     * @return \Doctrine\DBAL\Driver\PDOSqlsrv\Driver
+     */
+    protected function getDoctrineDriver()
+    {
+        return new DoctrineDriver;
+    }
 }

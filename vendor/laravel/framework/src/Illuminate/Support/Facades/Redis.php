@@ -1,12 +1,20 @@
-<?php namespace Illuminate\Support\Facades;
+<?php
 
-class Redis extends Facade {
+namespace Illuminate\Support\Facades;
 
-	/**
-	 * Get the registered name of the component.
-	 *
-	 * @return string
-	 */
-	protected static function getFacadeAccessor() { return 'redis'; }
-
+/**
+ * @see \Illuminate\Redis\RedisManager
+ * @see \Illuminate\Contracts\Redis\Factory
+ */
+class Redis extends Facade
+{
+    /**
+     * Get the registered name of the component.
+     *
+     * @return string
+     */
+    protected static function getFacadeAccessor()
+    {
+        return 'redis';
+    }
 }

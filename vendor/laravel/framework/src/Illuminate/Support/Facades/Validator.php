@@ -1,12 +1,19 @@
-<?php namespace Illuminate\Support\Facades;
+<?php
 
-class Validator extends Facade {
+namespace Illuminate\Support\Facades;
 
-	/**
-	 * Get the registered name of the component.
-	 *
-	 * @return string
-	 */
-	protected static function getFacadeAccessor() { return 'validator'; }
-
+/**
+ * @see \Illuminate\Validation\Factory
+ */
+class Validator extends Facade
+{
+    /**
+     * Get the registered name of the component.
+     *
+     * @return string
+     */
+    protected static function getFacadeAccessor()
+    {
+        return 'validator';
+    }
 }

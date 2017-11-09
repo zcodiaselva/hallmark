@@ -1,199 +1,178 @@
-<?php namespace Illuminate\Cookie;
+<?php
 
-use Closure;
-use Illuminate\Encryption\Encrypter;
+namespace Illuminate\Cookie;
+
+use Carbon\Carbon;
+use Illuminate\Support\Arr;
 use Symfony\Component\HttpFoundation\Cookie;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Contracts\Cookie\QueueingFactory as JarContract;
 
-class CookieJar {
+class CookieJar implements JarContract
+{
+    /**
+     * The default path (if specified).
+     *
+     * @var string
+     */
+    protected $path = '/';
 
-	/*
-	 * The current request instance.
-	 *
-	 * @var Symfony\Component\HttpFoundation\Request
-	 */
-	protected $request;
+    /**
+     * The default domain (if specified).
+     *
+     * @var string
+     */
+    protected $domain;
 
-	/**
-	 * The encrypter instance.
-	 *
-	 * @var \Illuminate\Encryption\Encrypter
-	 */
-	protected $encrypter;
+    /**
+     * The default secure setting (defaults to false).
+     *
+     * @var bool
+     */
+    protected $secure = false;
 
-	/**
-	 * The default path (if specified).
-	 *
-	 * @var string
-	 */
-	protected $path = '/';
+    /**
+     * All of the cookies queued for sending.
+     *
+     * @var array
+     */
+    protected $queued = [];
 
-	/**
-	 * The default domain (if specified).
-	 *
-	 * @var string
-	 */
-	protected $domain = null;
+    /**
+     * Create a new cookie instance.
+     *
+     * @param  string  $name
+     * @param  string  $value
+     * @param  int     $minutes
+     * @param  string  $path
+     * @param  string  $domain
+     * @param  bool    $secure
+     * @param  bool    $httpOnly
+     * @return \Symfony\Component\HttpFoundation\Cookie
+     */
+    public function make($name, $value, $minutes = 0, $path = null, $domain = null, $secure = false, $httpOnly = true)
+    {
+        list($path, $domain, $secure) = $this->getPathAndDomain($path, $domain, $secure);
 
-	/**
-	 * Create a new cookie manager instance.
-	 *
-	 * @param  \Symfony\Component\HttpFoundation\Request  $request
-	 * @param  \Illuminate\Encryption\Encrypter  $encrypter
-	 * @return void
-	 */
-	public function __construct(Request $request, Encrypter $encrypter)
-	{
-		$this->request = $request;
-		$this->encrypter = $encrypter;
-	}
+        $time = ($minutes == 0) ? 0 : Carbon::now()->getTimestamp() + ($minutes * 60);
 
-	/**
-	 * Determine if a cookie exists and is not null.
-	 *
-	 * @param  string  $key
-	 * @return bool
-	 */
-	public function has($key)
-	{
-		return ! is_null($this->get($key));
-	}
+        return new Cookie($name, $value, $time, $path, $domain, $secure, $httpOnly);
+    }
 
-	/**
-	 * Get the value of the given cookie.
-	 *
-	 * @param  string  $key
-	 * @param  mixed   $default
-	 * @return mixed
-	 */
-	public function get($key, $default = null)
-	{
-		$value = $this->request->cookies->get($key);
+    /**
+     * Create a cookie that lasts "forever" (five years).
+     *
+     * @param  string  $name
+     * @param  string  $value
+     * @param  string  $path
+     * @param  string  $domain
+     * @param  bool    $secure
+     * @param  bool    $httpOnly
+     * @return \Symfony\Component\HttpFoundation\Cookie
+     */
+    public function forever($name, $value, $path = null, $domain = null, $secure = false, $httpOnly = true)
+    {
+        return $this->make($name, $value, 2628000, $path, $domain, $secure, $httpOnly);
+    }
 
-		if ( ! is_null($value))
-		{
-			return $this->decrypt($value);
-		}
+    /**
+     * Expire the given cookie.
+     *
+     * @param  string  $name
+     * @param  string  $path
+     * @param  string  $domain
+     * @return \Symfony\Component\HttpFoundation\Cookie
+     */
+    public function forget($name, $path = null, $domain = null)
+    {
+        return $this->make($name, null, -2628000, $path, $domain);
+    }
 
-		return $default instanceof Closure ? $default() : $default;
-	}
+    /**
+     * Determine if a cookie has been queued.
+     *
+     * @param  string  $key
+     * @return bool
+     */
+    public function hasQueued($key)
+    {
+        return ! is_null($this->queued($key));
+    }
 
-	/**
-	 * Decrypt the given cookie value.
-	 *
-	 * @param  string      $value
-	 * @return mixed|null
-	 */
-	protected function decrypt($value)
-	{
-		try
-		{
-			return $this->encrypter->decrypt($value);
-		}
-		catch (\Exception $e)
-		{
-			return null;
-		}
-	}
+    /**
+     * Get a queued cookie instance.
+     *
+     * @param  string  $key
+     * @param  mixed   $default
+     * @return \Symfony\Component\HttpFoundation\Cookie
+     */
+    public function queued($key, $default = null)
+    {
+        return Arr::get($this->queued, $key, $default);
+    }
 
-	/**
-	 * Create a new cookie instance.
-	 *
-	 * @param  string  $name
-	 * @param  string  $value
-	 * @param  int     $minutes
-	 * @param  string  $path
-	 * @param  string  $domain
-	 * @param  bool    $secure
-	 * @param  bool    $httpOnly
-	 * @return \Symfony\Component\HttpFoundation\Cookie
-	 */
-	public function make($name, $value, $minutes = 0, $path = null, $domain = null, $secure = false, $httpOnly = true)
-	{
-		list($path, $domain) = $this->getPathAndDomain($path, $domain);
+    /**
+     * Queue a cookie to send with the next response.
+     *
+     * @param  array  $parameters
+     * @return void
+     */
+    public function queue(...$parameters)
+    {
+        if (head($parameters) instanceof Cookie) {
+            $cookie = head($parameters);
+        } else {
+            $cookie = call_user_func_array([$this, 'make'], $parameters);
+        }
 
-		// Once we calculate the time we can encrypt the message. All cookies will be
-		// encrypted using the Illuminate encryption component and will have a MAC
-		// assigned to them by the encrypter to make sure they remain authentic.
-		$time = ($minutes == 0) ? 0 : time() + ($minutes * 60);
+        $this->queued[$cookie->getName()] = $cookie;
+    }
 
-		$value = $this->encrypter->encrypt($value);
+    /**
+     * Remove a cookie from the queue.
+     *
+     * @param  string  $name
+     * @return void
+     */
+    public function unqueue($name)
+    {
+        unset($this->queued[$name]);
+    }
 
-		return new Cookie($name, $value, $time, $path, $domain, $secure, $httpOnly);
-	}
+    /**
+     * Get the path and domain, or the default values.
+     *
+     * @param  string  $path
+     * @param  string  $domain
+     * @param  bool    $secure
+     * @return array
+     */
+    protected function getPathAndDomain($path, $domain, $secure = false)
+    {
+        return [$path ?: $this->path, $domain ?: $this->domain, $secure ?: $this->secure];
+    }
 
-	/**
-	 * Create a cookie that lasts "forever" (five years).
-	 *
-	 * @param  string  $name
-	 * @param  string  $value
-	 * @param  string  $path
-	 * @param  string  $domain
-	 * @param  bool    $secure
-	 * @param  bool    $httpOnly
-	 * @return \Symfony\Component\HttpFoundation\Cookie
-	 */
-	public function forever($name, $value, $path = null, $domain = null, $secure = false, $httpOnly = true)
-	{
-		return $this->make($name, $value, 2628000, $path, $domain, $secure, $httpOnly);
-	}
+    /**
+     * Set the default path and domain for the jar.
+     *
+     * @param  string  $path
+     * @param  string  $domain
+     * @param  bool    $secure
+     * @return $this
+     */
+    public function setDefaultPathAndDomain($path, $domain, $secure = false)
+    {
+        list($this->path, $this->domain, $this->secure) = [$path, $domain, $secure];
 
-	/**
-	 * Expire the given cookie.
-	 *
-	 * @param  string  $name
-	 * @return \Symfony\Component\HttpFoundation\Cookie
-	 */
-	public function forget($name)
-	{
-		return $this->make($name, null, -2628000);
-	}
+        return $this;
+    }
 
-	/**
-	 * Get the path and domain, or the default values.
-	 *
-	 * @param  string  $path
-	 * @param  string  $domain
-	 * @return array
-	 */
-	protected function getPathAndDomain($path, $domain)
-	{
-		return array($path ?: $this->path, $domain ?: $this->domain);
-	}
-
-	/**
-	 * Set the default path and domain for the jar.
-	 *
-	 * @param  string  $path
-	 * @param  string  $domain
-	 * @return void
-	 */
-	public function setDefaultPathAndDomain($path, $domain)
-	{
-		list($this->path, $this->domain) = array($path, $domain);
-
-		return $this;
-	}
-
-	/**
-	 * Get the request instance.
-	 *
-	 * @return \Symfony\Component\HttpFoundation\Request
-	 */
-	public function getRequest()
-	{
-		return $this->request;
-	}
-
-	/**
-	 * Get the encrypter instance.
-	 *
-	 * @return \Illuminate\Encryption\Encrypter
-	 */
-	public function getEncrypter()
-	{
-		return $this->encrypter;
-	}
-
+    /**
+     * Get the cookies which have been queued for the next request.
+     *
+     * @return array
+     */
+    public function getQueuedCookies()
+    {
+        return $this->queued;
+    }
 }

@@ -1,12 +1,19 @@
-<?php namespace Illuminate\Support\Facades;
+<?php
 
-class Redirect extends Facade {
+namespace Illuminate\Support\Facades;
 
-	/**
-	 * Get the registered name of the component.
-	 *
-	 * @return string
-	 */
-	protected static function getFacadeAccessor() { return 'redirect'; }
-
+/**
+ * @see \Illuminate\Routing\Redirector
+ */
+class Redirect extends Facade
+{
+    /**
+     * Get the registered name of the component.
+     *
+     * @return string
+     */
+    protected static function getFacadeAccessor()
+    {
+        return 'redirect';
+    }
 }

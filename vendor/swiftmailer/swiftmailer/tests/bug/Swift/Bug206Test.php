@@ -1,12 +1,10 @@
 <?php
 
-require_once 'Swift/Tests/SwiftUnitTestCase.php';
-
-class Swift_Bug206Test extends Swift_Tests_SwiftUnitTestCase
+class Swift_Bug206Test extends \PHPUnit_Framework_TestCase
 {
     private $_factory;
 
-    public function setUp()
+    protected function setUp()
     {
         $factory = new Swift_CharacterReaderFactory_SimpleCharacterReaderFactory();
         $headerEncoder = new Swift_Mime_HeaderEncoder_QpHeaderEncoder(
@@ -30,11 +28,11 @@ class Swift_Bug206Test extends Swift_Tests_SwiftUnitTestCase
     private function _testHeaderIsFullyEncoded($email, $name, $expected)
     {
         $mailboxHeader = $this->_factory->createMailboxHeader('To', array(
-            $email => $name
+            $email => $name,
         ));
 
         $headerBody = substr($mailboxHeader->toString(), 3, strlen($expected));
 
-        $this->assertEqual($expected, $headerBody);
+        $this->assertEquals($expected, $headerBody);
     }
 }

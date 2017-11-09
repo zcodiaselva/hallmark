@@ -1,12 +1,19 @@
-<?php namespace Illuminate\Support\Facades;
+<?php
 
-class Hash extends Facade {
+namespace Illuminate\Support\Facades;
 
-	/**
-	 * Get the registered name of the component.
-	 *
-	 * @return string
-	 */
-	protected static function getFacadeAccessor() { return 'hash'; }
-
+/**
+ * @see \Illuminate\Hashing\BcryptHasher
+ */
+class Hash extends Facade
+{
+    /**
+     * Get the registered name of the component.
+     *
+     * @return string
+     */
+    protected static function getFacadeAccessor()
+    {
+        return 'hash';
+    }
 }
