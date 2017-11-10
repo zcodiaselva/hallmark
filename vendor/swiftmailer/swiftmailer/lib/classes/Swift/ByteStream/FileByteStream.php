@@ -11,7 +11,9 @@
 /**
  * Allows reading and writing of bytes to and from a file.
  *
- * @author Chris Corbyn
+ * @package    Swift
+ * @subpackage ByteStream
+ * @author     Chris Corbyn
  */
 class Swift_ByteStream_FileByteStream extends Swift_ByteStream_AbstractFilterableInputStream implements Swift_FileStream
 {
@@ -39,8 +41,8 @@ class Swift_ByteStream_FileByteStream extends Swift_ByteStream_AbstractFilterabl
     /**
      * Create a new FileByteStream for $path.
      *
-     * @param string $path
-     * @param bool   $writable if true
+     * @param string  $path
+     * @param boolean $writable if true
      */
     public function __construct($path, $writable = false)
     {
@@ -73,11 +75,11 @@ class Swift_ByteStream_FileByteStream extends Swift_ByteStream_AbstractFilterabl
      * remaining bytes are given instead. If no bytes are remaining at all, boolean
      * false is returned.
      *
-     * @param int $length
+     * @param integer $length
+     *
+     * @return string
      *
      * @throws Swift_IoException
-     *
-     * @return string|bool
      */
     public function read($length)
     {
@@ -92,28 +94,20 @@ class Swift_ByteStream_FileByteStream extends Swift_ByteStream_AbstractFilterabl
             }
             $this->_offset = ftell($fp);
 
-            // If we read one byte after reaching the end of the file
-            // feof() will return false and an empty string is returned
-            if ($bytes === '' && feof($fp)) {
-                $this->_resetReadHandle();
-
-                return false;
-            }
-
             return $bytes;
+        } else {
+            $this->_resetReadHandle();
+
+            return false;
         }
-
-        $this->_resetReadHandle();
-
-        return false;
     }
 
     /**
      * Move the internal read pointer to $byteOffset in the stream.
      *
-     * @param int $byteOffset
+     * @param integer $byteOffset
      *
-     * @return bool
+     * @return boolean
      */
     public function setReadPointer($byteOffset)
     {
@@ -122,6 +116,8 @@ class Swift_ByteStream_FileByteStream extends Swift_ByteStream_AbstractFilterabl
         }
         $this->_offset = $byteOffset;
     }
+
+    // -- Private methods
 
     /** Just write the bytes to the file */
     protected function _commit($bytes)
@@ -139,14 +135,12 @@ class Swift_ByteStream_FileByteStream extends Swift_ByteStream_AbstractFilterabl
     private function _getReadHandle()
     {
         if (!isset($this->_reader)) {
-            $pointer = @fopen($this->_path, 'rb');
-            if (!$pointer) {
+            if (!$this->_reader = fopen($this->_path, 'rb')) {
                 throw new Swift_IoException(
-                    'Unable to open file for reading ['.$this->_path.']'
+                    'Unable to open file for reading [' . $this->_path . ']'
                 );
             }
-            $this->_reader = $pointer;
-            if ($this->_offset != 0) {
+            if ($this->_offset <> 0) {
                 $this->_getReadStreamSeekableStatus();
                 $this->_seekReadStreamToPosition($this->_offset);
             }
@@ -161,7 +155,7 @@ class Swift_ByteStream_FileByteStream extends Swift_ByteStream_AbstractFilterabl
         if (!isset($this->_writer)) {
             if (!$this->_writer = fopen($this->_path, $this->_mode)) {
                 throw new Swift_IoException(
-                    'Unable to open file for writing ['.$this->_path.']'
+                    'Unable to open file for writing [' . $this->_path . ']'
                 );
             }
         }
@@ -188,13 +182,13 @@ class Swift_ByteStream_FileByteStream extends Swift_ByteStream_AbstractFilterabl
     /** Streams in a readOnly stream ensuring copy if needed */
     private function _seekReadStreamToPosition($offset)
     {
-        if ($this->_seekable === null) {
+        if ($this->_seekable===null) {
             $this->_getReadStreamSeekableStatus();
         }
         if ($this->_seekable === false) {
             $currentPos = ftell($this->_reader);
-            if ($currentPos < $offset) {
-                $toDiscard = $offset - $currentPos;
+            if ($currentPos<$offset) {
+                $toDiscard = $offset-$currentPos;
                 fread($this->_reader, $toDiscard);
 
                 return;
@@ -218,7 +212,7 @@ class Swift_ByteStream_FileByteStream extends Swift_ByteStream_AbstractFilterabl
         fclose($this->_reader);
         $source = fopen($this->_path, 'rb');
         if (!$source) {
-            throw new Swift_IoException('Unable to open file for copying ['.$this->_path.']');
+            throw new Swift_IoException('Unable to open file for copying [' . $this->_path . ']');
         }
         fseek($tmpFile, 0, SEEK_SET);
         while (!feof($source)) {

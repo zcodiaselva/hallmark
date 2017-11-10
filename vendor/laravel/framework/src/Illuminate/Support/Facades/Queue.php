@@ -1,32 +1,12 @@
-<?php
+<?php namespace Illuminate\Support\Facades;
 
-namespace Illuminate\Support\Facades;
+class Queue extends Facade {
 
-use Illuminate\Support\Testing\Fakes\QueueFake;
+	/**
+	 * Get the registered name of the component.
+	 *
+	 * @return string
+	 */
+	protected static function getFacadeAccessor() { return 'queue'; }
 
-/**
- * @see \Illuminate\Queue\QueueManager
- * @see \Illuminate\Queue\Queue
- */
-class Queue extends Facade
-{
-    /**
-     * Replace the bound instance with a fake.
-     *
-     * @return void
-     */
-    public static function fake()
-    {
-        static::swap(new QueueFake(static::getFacadeApplication()));
-    }
-
-    /**
-     * Get the registered name of the component.
-     *
-     * @return string
-     */
-    protected static function getFacadeAccessor()
-    {
-        return 'queue';
-    }
 }

@@ -1,40 +1,33 @@
 <?php
 
-namespace PhpParser;
-
 /**
  * @codeCoverageIgnore
  */
-class Autoloader
+class PHPParser_Autoloader
 {
-    /** @var bool Whether the autoloader has been registered. */
-    private static $registered = false;
-
     /**
-     * Registers PhpParser\Autoloader as an SPL autoloader.
-     *
-     * @param bool $prepend Whether to prepend the autoloader instead of appending
-     */
-    static public function register($prepend = false) {
-        if (self::$registered === true) {
-            return;
-        }
-
-        spl_autoload_register(array(__CLASS__, 'autoload'), true, $prepend);
-        self::$registered = true;
+    * Registers PHPParser_Autoloader as an SPL autoloader.
+    */
+    static public function register()
+    {
+        ini_set('unserialize_callback_func', 'spl_autoload_call');
+        spl_autoload_register(array(__CLASS__, 'autoload'));
     }
 
     /**
-     * Handles autoloading of classes.
-     *
-     * @param string $class A class name.
-     */
-    static public function autoload($class) {
-        if (0 === strpos($class, 'PhpParser\\')) {
-            $fileName = __DIR__ . strtr(substr($class, 9), '\\', '/') . '.php';
-            if (file_exists($fileName)) {
-                require $fileName;
-            }
+    * Handles autoloading of classes.
+    *
+    * @param string $class A class name.
+    */
+    static public function autoload($class)
+    {
+        if (0 !== strpos($class, 'PHPParser')) {
+            return;
+        }
+
+        $file = dirname(dirname(__FILE__)) . '/' . strtr($class, '_', '/') . '.php';
+        if (is_file($file)) {
+            require $file;
         }
     }
 }

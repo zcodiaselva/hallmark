@@ -11,7 +11,9 @@
 /**
  * A null KeyCache that does not cache at all.
  *
- * @author Chris Corbyn
+ * @package    Swift
+ * @subpackage KeyCache
+ * @author     Chris Corbyn
  */
 class Swift_KeyCache_NullKeyCache implements Swift_KeyCache
 {
@@ -20,10 +22,10 @@ class Swift_KeyCache_NullKeyCache implements Swift_KeyCache
      *
      * @see MODE_WRITE, MODE_APPEND
      *
-     * @param string $nsKey
-     * @param string $itemKey
-     * @param string $string
-     * @param int    $mode
+     * @param string  $nsKey
+     * @param string  $itemKey
+     * @param string  $string
+     * @param integer $mode
      */
     public function setString($nsKey, $itemKey, $string, $mode)
     {
@@ -37,7 +39,7 @@ class Swift_KeyCache_NullKeyCache implements Swift_KeyCache
      * @param string                 $nsKey
      * @param string                 $itemKey
      * @param Swift_OutputByteStream $os
-     * @param int                    $mode
+     * @param integer                $mode
      */
     public function importFromByteStream($nsKey, $itemKey, Swift_OutputByteStream $os, $mode)
     {
@@ -87,7 +89,7 @@ class Swift_KeyCache_NullKeyCache implements Swift_KeyCache
      * @param string $nsKey
      * @param string $itemKey
      *
-     * @return bool
+     * @return boolean
      */
     public function hasKey($nsKey, $itemKey)
     {

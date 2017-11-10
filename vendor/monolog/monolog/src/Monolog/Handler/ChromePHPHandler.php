@@ -17,8 +17,6 @@ use Monolog\Logger;
 /**
  * Handler sending logs to the ChromePHP extension (http://www.chromephp.com/)
  *
- * This also works out of the box with Firefox 43+
- *
  * @author Christophe Coevoet <stof@notk.org>
  */
 class ChromePHPHandler extends AbstractProcessingHandler
@@ -26,17 +24,12 @@ class ChromePHPHandler extends AbstractProcessingHandler
     /**
      * Version of the extension
      */
-    const VERSION = '4.0';
+    const VERSION = '3.0';
 
     /**
      * Header name
      */
-    const HEADER_NAME = 'X-ChromeLogger-Data';
-    
-    /**
-     * Regular expression to detect supported browsers (matches any Chrome, or Firefox 43+)
-     */
-    const USER_AGENT_REGEX = '{\b(?:Chrome/\d+(?:\.\d+)*|HeadlessChrome|Firefox/(?:4[3-9]|[5-9]\d|\d{3,})(?:\.\d)*)\b}';
+    const HEADER_NAME = 'X-ChromePhp-Data';
 
     protected static $initialized = false;
 
@@ -56,18 +49,6 @@ class ChromePHPHandler extends AbstractProcessingHandler
     );
 
     protected static $sendHeaders = true;
-
-    /**
-     * @param int     $level  The minimum logging level at which this handler will be triggered
-     * @param Boolean $bubble Whether the messages that are handled can bubble up the stack or not
-     */
-    public function __construct($level = Logger::DEBUG, $bubble = true)
-    {
-        parent::__construct($level, $bubble);
-        if (!function_exists('json_encode')) {
-            throw new \RuntimeException('PHP\'s json extension is required to use Monolog\'s ChromePHPHandler');
-        }
-    }
 
     /**
      * {@inheritdoc}
@@ -119,24 +100,20 @@ class ChromePHPHandler extends AbstractProcessingHandler
      */
     protected function send()
     {
-        if (self::$overflowed || !self::$sendHeaders) {
+        if (self::$overflowed) {
             return;
         }
 
         if (!self::$initialized) {
-            self::$initialized = true;
-
             self::$sendHeaders = $this->headersAccepted();
-            if (!self::$sendHeaders) {
-                return;
-            }
-
             self::$json['request_uri'] = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+
+            self::$initialized = true;
         }
 
         $json = @json_encode(self::$json);
         $data = base64_encode(utf8_encode($json));
-        if (strlen($data) > 240 * 1024) {
+        if (strlen($data) > 240*1024) {
             self::$overflowed = true;
 
             $record = array(
@@ -153,9 +130,7 @@ class ChromePHPHandler extends AbstractProcessingHandler
             $data = base64_encode(utf8_encode($json));
         }
 
-        if (trim($data) !== '') {
-            $this->sendHeader(self::HEADER_NAME, $data);
-        }
+        $this->sendHeader(self::HEADER_NAME, $data);
     }
 
     /**
@@ -178,11 +153,8 @@ class ChromePHPHandler extends AbstractProcessingHandler
      */
     protected function headersAccepted()
     {
-        if (empty($_SERVER['HTTP_USER_AGENT'])) {
-            return false;
-        }
-
-        return preg_match(self::USER_AGENT_REGEX, $_SERVER['HTTP_USER_AGENT']);
+        return !isset($_SERVER['HTTP_USER_AGENT'])
+               || preg_match('{\bChrome/\d+[\.\d+]*\b}', $_SERVER['HTTP_USER_AGENT']);
     }
 
     /**

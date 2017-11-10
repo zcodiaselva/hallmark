@@ -10,9 +10,8 @@ class ContactFormValidator extends Validator {
 		// 'zip_code'  => 'required|max:50',
 		// 'email' => 'email',
 		'recaptcha_response_field' => 'required|recaptcha'
-                 //'g-recaptcha-response' =>  'required|recaptcha'
 	);
-             
-    public static $messages = array();	
+
+	public static $messages = array();	
 
 }

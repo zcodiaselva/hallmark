@@ -1,19 +1,12 @@
-<?php
+<?php namespace Illuminate\Support\Facades;
 
-namespace Illuminate\Support\Facades;
+class Lang extends Facade {
 
-/**
- * @see \Illuminate\Translation\Translator
- */
-class Lang extends Facade
-{
-    /**
-     * Get the registered name of the component.
-     *
-     * @return string
-     */
-    protected static function getFacadeAccessor()
-    {
-        return 'translator';
-    }
+	/**
+	 * Get the registered name of the component.
+	 *
+	 * @return string
+	 */
+	protected static function getFacadeAccessor() { return 'translator'; }
+
 }

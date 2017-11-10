@@ -3,7 +3,7 @@
 /*
  * This file is part of the Monolog package.
  *
- * (c) Jordi Boggiano <j.boggiano@seld.be>
+ * (c) Thomas Tourlourat <thomas@tourlourat.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -27,12 +27,12 @@ use Monolog\Formatter\NormalizerFormatter;
  */
 class MongoDBHandler extends AbstractProcessingHandler
 {
-    protected $mongoCollection;
+    private $mongoCollection;
 
     public function __construct($mongo, $database, $collection, $level = Logger::DEBUG, $bubble = true)
     {
-        if (!($mongo instanceof \MongoClient || $mongo instanceof \Mongo || $mongo instanceof \MongoDB\Client)) {
-            throw new \InvalidArgumentException('MongoClient, Mongo or MongoDB\Client instance required');
+        if (!($mongo instanceof \MongoClient || $mongo instanceof \Mongo)) {
+            throw new \InvalidArgumentException('MongoClient or Mongo instance required');
         }
 
         $this->mongoCollection = $mongo->selectCollection($database, $collection);
@@ -42,11 +42,7 @@ class MongoDBHandler extends AbstractProcessingHandler
 
     protected function write(array $record)
     {
-        if ($this->mongoCollection instanceof \MongoDB\Collection) {
-            $this->mongoCollection->insertOne($record["formatted"]);
-        } else {
-            $this->mongoCollection->save($record["formatted"]);
-        }
+        $this->mongoCollection->save($record["formatted"]);
     }
 
     /**

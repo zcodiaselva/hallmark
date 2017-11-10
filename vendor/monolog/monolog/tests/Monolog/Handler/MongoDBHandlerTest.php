@@ -26,7 +26,7 @@ class MongoDBHandlerTest extends TestCase
 
     public function testHandle()
     {
-        $mongo = $this->getMock('Mongo', array('selectCollection'), array(), '', false);
+        $mongo = $this->getMock('Mongo', array('selectCollection'));
         $collection = $this->getMock('stdClass', array('save'));
 
         $mongo->expects($this->once())
@@ -58,8 +58,6 @@ class MongoDBHandlerTest extends TestCase
 if (!class_exists('Mongo')) {
     class Mongo
     {
-        public function selectCollection()
-        {
-        }
+        public function selectCollection() {}
     }
 }

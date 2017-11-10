@@ -1,38 +1,36 @@
 <?php
 
-namespace PhpParser\Node\Stmt;
-
-use PhpParser\Node;
-
-class UseUse extends Node\Stmt
+/**
+ * @property PHPParser_Node_Name $name  Namespace/Class to alias
+ * @property string              $alias Alias
+ */
+class PHPParser_Node_Stmt_UseUse extends PHPParser_Node_Stmt
 {
-    /** @var int One of the Stmt\Use_::TYPE_* constants. Will only differ from TYPE_UNKNOWN for mixed group uses */
-    public $type;
-    /** @var Node\Name Namespace, class, function or constant to alias */
-    public $name;
-    /** @var string Alias */
-    public $alias;
-
     /**
      * Constructs an alias (use) node.
      *
-     * @param Node\Name   $name       Namespace/Class to alias
-     * @param null|string $alias      Alias
-     * @param int         $type       Type of the use element (for mixed group use declarations only)
-     * @param array       $attributes Additional attributes
+     * @param PHPParser_Node_Name $name       Namespace/Class to alias
+     * @param null|string         $alias      Alias
+     * @param array               $attributes Additional attributes
      */
-    public function __construct(Node\Name $name, $alias = null, $type = Use_::TYPE_UNKNOWN, array $attributes = array()) {
+    public function __construct(PHPParser_Node_Name $name, $alias = null, array $attributes = array()) {
         if (null === $alias) {
             $alias = $name->getLast();
         }
 
-        parent::__construct($attributes);
-        $this->type = $type;
-        $this->name = $name;
-        $this->alias = $alias;
-    }
+        if ('self' == $alias || 'parent' == $alias) {
+            throw new PHPParser_Error(sprintf(
+                'Cannot use "%s" as "%s" because "%2$s" is a special class name',
+                $name, $alias
+            ));
+        }
 
-    public function getSubNodeNames() {
-        return array('type', 'name', 'alias');
+        parent::__construct(
+            array(
+                'name'  => $name,
+                'alias' => $alias,
+            ),
+            $attributes
+        );
     }
 }

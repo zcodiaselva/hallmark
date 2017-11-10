@@ -5,8 +5,8 @@ use Eloquent;
 
 class Menu extends Eloquent {
 
-    protected $table = 'menues';
-    
+	protected $table = 'menues';
+
     public function parent()
     {
         return $this->belongsTo('App\Models\Menu','parent_id');
@@ -30,6 +30,6 @@ class Menu extends Eloquent {
     public function page()
     {
     	return $this->belongsTo('App\Models\Page', 'page_id');
-    }       
-        
+    }
+
 }

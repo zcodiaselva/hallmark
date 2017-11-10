@@ -11,7 +11,9 @@
 /**
  * An embedded file, in a multipart message.
  *
- * @author Chris Corbyn
+ * @package    Swift
+ * @subpackage Mime
+ * @author     Chris Corbyn
  */
 class Swift_Mime_EmbeddedFile extends Swift_Mime_Attachment
 {
@@ -36,7 +38,7 @@ class Swift_Mime_EmbeddedFile extends Swift_Mime_Attachment
      *
      * Returns {@see LEVEL_RELATED}.
      *
-     * @return int
+     * @return integer
      */
     public function getNestingLevel()
     {

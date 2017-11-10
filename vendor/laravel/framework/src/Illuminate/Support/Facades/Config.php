@@ -1,19 +1,12 @@
-<?php
+<?php namespace Illuminate\Support\Facades;
 
-namespace Illuminate\Support\Facades;
+class Config extends Facade {
 
-/**
- * @see \Illuminate\Config\Repository
- */
-class Config extends Facade
-{
-    /**
-     * Get the registered name of the component.
-     *
-     * @return string
-     */
-    protected static function getFacadeAccessor()
-    {
-        return 'config';
-    }
+	/**
+	 * Get the registered name of the component.
+	 *
+	 * @return string
+	 */
+	protected static function getFacadeAccessor() { return 'config'; }
+
 }

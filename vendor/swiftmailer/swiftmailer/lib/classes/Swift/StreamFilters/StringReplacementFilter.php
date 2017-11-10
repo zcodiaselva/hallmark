@@ -11,7 +11,8 @@
 /**
  * Processes bytes as they pass through a buffer and replaces sequences in it.
  *
- * @author Chris Corbyn
+ * @package Swift
+ * @author  Chris Corbyn
  */
 class Swift_StreamFilters_StringReplacementFilter implements Swift_StreamFilter
 {
@@ -38,14 +39,10 @@ class Swift_StreamFilters_StringReplacementFilter implements Swift_StreamFilter
      *
      * @param string $buffer
      *
-     * @return bool
+     * @return boolean
      */
     public function shouldBuffer($buffer)
     {
-        if ('' === $buffer) {
-            return false;
-        }
-
         $endOfBuffer = substr($buffer, -1);
         foreach ((array) $this->_search as $needle) {
             if (false !== strpos($needle, $endOfBuffer)) {

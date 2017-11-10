@@ -1,41 +1,34 @@
 {
     "name": "illuminate/validation",
-    "description": "The Illuminate Validation package.",
     "license": "MIT",
-    "homepage": "https://laravel.com",
-    "support": {
-        "issues": "https://github.com/laravel/framework/issues",
-        "source": "https://github.com/laravel/framework"
-    },
     "authors": [
         {
             "name": "Taylor Otwell",
-            "email": "taylor@laravel.com"
+            "email": "taylorotwell@gmail.com"
         }
     ],
     "require": {
-        "php": ">=5.6.4",
-        "illuminate/container": "5.4.*",
-        "illuminate/contracts": "5.4.*",
-        "illuminate/support": "5.4.*",
-        "illuminate/translation": "5.4.*",
-        "symfony/http-foundation": "~3.2"
+        "php": ">=5.3.0",
+        "illuminate/container": "4.0.x",
+        "illuminate/support": "4.0.x",
+        "symfony/http-foundation": "2.3.*",
+        "symfony/translation": "2.3.*"
+    },
+    "require-dev": {
+        "illuminate/database": "4.0.x",
+        "mockery/mockery": "0.7.2",
+        "phpunit/phpunit": "3.7.*"
     },
     "autoload": {
-        "psr-4": {
-            "Illuminate\\Validation\\": ""
+        "psr-0": {
+            "Illuminate\\Validation": ""
         }
     },
+    "target-dir": "Illuminate/Validation",
     "extra": {
         "branch-alias": {
-            "dev-master": "5.4-dev"
+            "dev-master": "4.0-dev"
         }
-    },
-    "suggest": {
-        "illuminate/database": "Required to use the database presence verifier (5.4.*)."
-    },
-    "config": {
-        "sort-packages": true
     },
     "minimum-stability": "dev"
 }

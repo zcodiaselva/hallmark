@@ -11,7 +11,9 @@
 /**
  * Handles LOGIN authentication.
  *
- * @author Chris Corbyn
+ * @package    Swift
+ * @subpackage Transport
+ * @author     Chris Corbyn
  */
 class Swift_Transport_Esmtp_Auth_LoginAuthenticator implements Swift_Transport_Esmtp_Authenticator
 {
@@ -32,7 +34,7 @@ class Swift_Transport_Esmtp_Auth_LoginAuthenticator implements Swift_Transport_E
      * @param string                    $username
      * @param string                    $password
      *
-     * @return bool
+     * @return boolean
      */
     public function authenticate(Swift_Transport_SmtpAgent $agent, $username, $password)
     {

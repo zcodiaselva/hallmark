@@ -1,119 +1,88 @@
-<?php
+<?php namespace Illuminate\Session;
 
-namespace Illuminate\Session;
+use Illuminate\Cookie\CookieJar;
 
-use Carbon\Carbon;
-use SessionHandlerInterface;
-use Symfony\Component\HttpFoundation\Request;
-use Illuminate\Contracts\Cookie\QueueingFactory as CookieJar;
+class CookieSessionHandler implements \SessionHandlerInterface {
 
-class CookieSessionHandler implements SessionHandlerInterface
-{
-    /**
-     * The cookie jar instance.
-     *
-     * @var \Illuminate\Contracts\Cookie\Factory
-     */
-    protected $cookie;
+	/**
+	 * The cookie jar instance.
+	 *
+	 * @var \Illuminate\Cookie\CookieJar
+	 */
+	protected $cookie;
 
-    /**
-     * The request instance.
-     *
-     * @var \Symfony\Component\HttpFoundation\Request
-     */
-    protected $request;
+	/**
+	 * Create a new cookie driven handler instance.
+	 *
+	 * @param  \Illuminate\Cookie\CookieJar  $cookie
+	 * @param  int  $minutes
+	 * @return void
+	 */
+	public function __construct(CookieJar $cookie, $minutes)
+	{
+		$this->cookie = $cookie;
+		$this->minutes = $minutes;
+	}
 
-    /**
-     * The number of minutes the session should be valid.
-     *
-     * @var int
-     */
-    protected $minutes;
+	/**
+	 * {@inheritDoc}
+	 */
+	public function open($savePath, $sessionName)
+	{
+		return true;
+	}
 
-    /**
-     * Create a new cookie driven handler instance.
-     *
-     * @param  \Illuminate\Contracts\Cookie\QueueingFactory  $cookie
-     * @param  int  $minutes
-     * @return void
-     */
-    public function __construct(CookieJar $cookie, $minutes)
-    {
-        $this->cookie = $cookie;
-        $this->minutes = $minutes;
-    }
+	/**
+	 * {@inheritDoc}
+	 */
+	public function close()
+	{
+		return true;
+	}
 
-    /**
-     * {@inheritdoc}
-     */
-    public function open($savePath, $sessionName)
-    {
-        return true;
-    }
+	/**
+	 * {@inheritDoc}
+	 */
+	public function read($sessionId)
+	{
+		return $this->cookie->get($sessionId) ?: '';
+	}
 
-    /**
-     * {@inheritdoc}
-     */
-    public function close()
-    {
-        return true;
-    }
+	/**
+	 * {@inheritDoc}
+	 */
+	public function write($sessionId, $data)
+	{
+		$this->setCookie($this->cookie->make($sessionId, $data, $this->minutes));
+	}
 
-    /**
-     * {@inheritdoc}
-     */
-    public function read($sessionId)
-    {
-        $value = $this->request->cookies->get($sessionId) ?: '';
+	/**
+	 * {@inheritDoc}
+	 */
+	public function destroy($sessionId)
+	{
+		$this->setCookie($this->cookie->forget($sessionId));
+	}
 
-        if (! is_null($decoded = json_decode($value, true)) && is_array($decoded)) {
-            if (isset($decoded['expires']) && Carbon::now()->getTimestamp() <= $decoded['expires']) {
-                return $decoded['data'];
-            }
-        }
+	/**
+	 * Set the given cookie in the headers.
+	 *
+	 * @param  \Symfony\Component\HttpFoundation\Cookie  $cookie
+	 * @return void
+	 */
+	protected function setCookie($cookie)
+	{
+		if (headers_sent()) return;
 
-        return '';
-    }
+		setcookie($cookie->getName(), $cookie->getValue(), $cookie->getExpiresTime(), $cookie->getPath(), $cookie->getDomain(), $cookie->isSecure(), $cookie->isHttpOnly());
+	}
 
-    /**
-     * {@inheritdoc}
-     */
-    public function write($sessionId, $data)
-    {
-        $this->cookie->queue($sessionId, json_encode([
-            'data' => $data,
-            'expires' => Carbon::now()->addMinutes($this->minutes)->getTimestamp(),
-        ]), $this->minutes);
+	/**
+	 * {@inheritDoc}
+	 */
+	public function gc($lifetime)
+	{
+		return true;
+	}
 
-        return true;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function destroy($sessionId)
-    {
-        $this->cookie->queue($this->cookie->forget($sessionId));
-
-        return true;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function gc($lifetime)
-    {
-        return true;
-    }
-
-    /**
-     * Set the request instance.
-     *
-     * @param  \Symfony\Component\HttpFoundation\Request  $request
-     * @return void
-     */
-    public function setRequest(Request $request)
-    {
-        $this->request = $request;
-    }
 }
