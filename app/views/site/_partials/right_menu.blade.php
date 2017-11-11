@@ -1,4 +1,10 @@
- <ul class="nav navbar-nav main-nav right">
-       <li><a href="{{ URL::to('contact-us') }}" {{ Request::is('contact-us') ? 'class="active"' : '' }}>Contact Hallmark</a></li>
-       <li><a href="http://dev.hgagrp.com/Login.asp"target="_blank">Agent Login</a></li>
- </ul>
+ 
+ <ul id="top-menu" class="nav navbar-nav main-nav right">
+    @foreach($menu as $product)
+    @if($product->order > 8 )  
+		<li><a href="{{ URL::to($product->slug_en)}}">{{ $product->name_en }}</a></li>
+    @else
+		
+    @endif
+    @endforeach
+</ul>

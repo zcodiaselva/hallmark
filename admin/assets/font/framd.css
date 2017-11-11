@@ -1,8 +1,0 @@
-@font-face {
-    font-family: 'FranklinGothicMediumRegular';
-    src: url('framd.eot');
-    src: url('framd.eot') format('embedded-opentype'),
-         url('framd.woff') format('woff'),
-         url('framd.ttf') format('truetype'),
-         url('framd.svg#FranklinGothicMediumRegular') format('svg');
-}
