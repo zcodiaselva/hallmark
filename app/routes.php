@@ -16,12 +16,12 @@ Route::post('producer/login',  array('as' => 'producer.login.post',  'uses' => '
 
 Route::group(array('prefix' => 'producer' , 'before' => 'sentry'), function()
 {
-    //Route::controller('/', 'App\Controllers\Producer\ProducerController');
+    Route::controller('/', 'App\Controllers\Producer\ProducerController');
 });
 
 Route::get('/agency',  array('as' => 'agency.license',  'uses' => 'HomeController@getNewAgency'));
 Route::post('/agency',  array('as' => 'agencyform.submit.post',  'uses' => 'HomeController@getNewAgencySubmit'));
-Route::get('/contact-us',  array('as' => 'contact.index',  'uses' => 'HomeController@getOurTeam'));
+//Route::get('/contact-us',  array('as' => 'contact.index',  'uses' => 'HomeController@getOurTeam'));
 Route::post('/contact-us',  array('as' => 'contactform.submit.post',  'uses' => 'HomeController@postContactUs'));
 
 Route::get('/{slug}', 'HomeController@showMainMenu'); //To Add the Dynamic Main Menus
