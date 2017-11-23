@@ -56,8 +56,8 @@
   </section>
   <section id="sidebar" class="col-sm-3 sidebar">
 		<div class="info">
-    	<img src="{{ URL::asset('uploads/cis/pages/'.$page->image1) }}" alt="Electrician" class="img-responsive"> 
-      <img src="{{ URL::asset('uploads/cis/pages/'.$page->image2) }}" alt="buffer" class="img-responsive">
+    	<img src="{{ URL::asset('admin/uploads/cis/pages/'.$page->image1) }}" alt="Electrician" class="img-responsive"> 
+      <img src="{{ URL::asset('admin/uploads/cis/pages/'.$page->image2) }}" alt="buffer" class="img-responsive">
     </div>
   </section>
 

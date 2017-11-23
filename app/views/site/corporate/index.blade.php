@@ -17,7 +17,7 @@
 
                 <br>
                     <div align="center">
-                        <img class="" src="{{ URL::asset('uploads/main/page/'.$page->image1) }}" style="max-width:100%" alt="{{ $page->page_heading }}">
+                        <img class="" src="{{ URL::asset('admin/uploads/cis/page/'.$page->image1) }}" style="max-width:100%" alt="{{ $page->page_heading }}">
                     </div>
                 <br>
 

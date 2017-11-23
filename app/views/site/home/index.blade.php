@@ -20,7 +20,7 @@
     <div id="slider">
       <div class="main-slider">
          @foreach ($sliders as $slider)
-        <div class="single-slide"> <img src="{{ URL::asset('uploads/cis/slider/'.$slider->image) }}" alt="{{$slider->alt}}">
+        <div class="single-slide"> <img src="{{ URL::asset('admin/uploads/cis/slider/'.$slider->image) }}" alt="{{$slider->alt}}">
           <div class="slide-content">
             <div class="slide-article">
               <h2 class="wow fadeInUp slide-1" data-wow-duration="0.5s" data-wow-delay="0.5s">{{$slider->alt}}</h2>
